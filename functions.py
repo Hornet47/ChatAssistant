@@ -1,4 +1,4 @@
-get_current_weather = {
+d_get_current_weather = {
     "name": "get_current_weather",
     "description": "Get the weather in location",
     "parameters": {
@@ -13,3 +13,6 @@ get_current_weather = {
         "required": ["location"],
     },
 }
+
+def get_current_weather(location: str, unit: str = "c"):
+    return f"The weather in {location} is 10 degree celcius, rainy"

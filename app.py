@@ -1,6 +1,6 @@
-from time import sleep
 from openai import OpenAI
 from assistants import Assistant
+from threads import Thread
 import functions
 
 client = OpenAI().beta
@@ -10,28 +10,21 @@ assistant = Assistant(
         {"type": "code_interpreter"},
         {
             "type": "function",
-            "function": functions.get_current_weather,
+            "function": functions.d_get_current_weather,
         },
     ]
 )
 
-print(assistant.id)
+initial_message = input("Send a message:")
+thread = Thread(initial_message, assistant)
 
-def submit_message(assistant_id, thread, user_message):
-    client.threads.messages.create(
-        thread_id=thread.id, role="user", content=user_message
-    )
-    return client.threads.runs.create(
-        thread_id=thread.id,
-        assistant_id=assistant_id,
-    )
-
-
-def wait_on_run(run, thread):
-    while run.status == "queued" or run.status == "in_progress":
-        run = client.threads.runs.retrieve(
-            thread_id=thread.id,
-            run_id=run.id,
-        )
-        sleep(0.5)
-    return run
+while True:
+    thread.wait_on_run()
+    
+    if thread.run.status == "requires_action":
+        thread.submit_tool_outputs()
+        thread.wait_for_complete()
+        
+    print("Assistant: " + thread.get_response())
+    message = input("Send a message: ")
+    thread.add_and_run(message, assistant)
