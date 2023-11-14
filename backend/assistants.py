@@ -4,7 +4,6 @@ from openai.types.beta.assistant_create_params import Tool
 
 client = OpenAI().beta
 
-
 class Assistant:
     id: str
 
@@ -22,3 +21,9 @@ class Assistant:
             model=model,
         )
         self.id = self._assistant.id
+        
+    def get_by_name(name: str) -> str:
+        for assistant in client.assistants.list().data:
+            if assistant.name == name:
+                return assistant.id
+            

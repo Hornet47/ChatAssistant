@@ -3,7 +3,6 @@ from openai import OpenAI
 from openai.types.beta.threads.run import Run
 from openai.types.beta.threads.thread_message import ThreadMessage
 from assistants import Assistant
-import time
 import toolcalls
 
 client = OpenAI().beta
@@ -20,29 +19,27 @@ class Thread:
         self.messages = []
         self.add_and_run(init_message, assistant)
 
-    def add_and_run(self, content: str, assistant: Assistant) -> Run:
+    def add_and_run(self, content: str, assistant: Assistant):
         message = client.threads.messages.create(self.id, content=content, role="user")
         self.messages.append(message)
         self.run = client.threads.runs.create(thread_id=self.id, assistant_id=assistant.id)
-        return self.run
+        return self.wait_on_run()
 
-    def wait_on_run(self) -> Run:
+    def wait_on_run(self):
         while self.run.status == "queued" or self.run.status == "in_progress":
-            time.sleep(0.2)
             self.run = client.threads.runs.retrieve(
                 run_id=self.run.id,
                 thread_id=self.id
             )
-        return self.run
+        return self
     
-    def wait_for_complete(self) -> Run:
+    def wait_for_complete(self):
         while self.run.status != "completed":
-            time.sleep(0.2)
             self.run = client.threads.runs.retrieve(
                 run_id=self.run.id,
                 thread_id=self.id
             )
-        return self.run
+        return self
             
     def get_response(self) -> str:
             message = client.threads.messages.list(self.id).data[0]
@@ -57,4 +54,5 @@ class Thread:
             thread_id=self.id, 
             tool_outputs=outputs
             )
+        return self.wait_for_complete()
         
